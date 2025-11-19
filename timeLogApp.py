@@ -1,6 +1,7 @@
 import traceback
 
-from PySide2 import QtWidgets, QtCore, QtGui
+from PySide6 import QtWidgets, QtCore, QtGui
+# from PySide2 import QtWidgets, QtCore, QtGui
 import traceback
 import sys
 
@@ -26,6 +27,15 @@ datas = {
     }
 }
 
+class MyList():
+    def __init__(self, column_number=3):
+        self.column_number = column_number
+
+
+
+
+
+
 class MyUi(QtWidgets.QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -37,6 +47,7 @@ class MyUi(QtWidgets.QWidget):
         except :
             print("No tasks have been found, entering exercize mode \nUsing the 'datas' dict to fake tasks")
             self.tasks = datas
+
 
 
         # region -- Main Layout
@@ -64,38 +75,76 @@ class MyUi(QtWidgets.QWidget):
 
         return
 
+
     def create_time_group_box(self):
 
-        lay = QtWidgets.QVBoxLayout()
+
         self._time_group_box = QtWidgets.QGroupBox("Time Logs")
+        lay = QtWidgets.QVBoxLayout()
         self._time_group_box.setLayout(lay)
 
-        time_combo_box = QtWidgets.QComboBox()
-        time_combo_box.insertItems(0, list(self.tasks.keys()))
-        lay.addWidget(time_combo_box)
+        self.time_combo_box = QtWidgets.QComboBox()
+        self.time_combo_box.insertItems(0, list(self.tasks.keys()))
+        lay.addWidget(self.time_combo_box)
 
 
-        self.list_widget = QtWidgets.QListView()
-        self.list_widget.setSelectionMode(QtWidgets.QListWidget.SelectionMode.ExtendedSelection)
-        lay.addWidget(self.list_widget)
+        self.list = QtWidgets.QListWidget()
+        self.list.setSelectionMode(QtWidgets.QListWidget.SelectionMode.ExtendedSelection)
+        self.populate_list()
+        self.list.itemSelectionChanged.connect(lambda: self.set_edit_task)
+
+        self.time_combo_box.currentIndexChanged.connect(lambda: self.populate_list())
+        lay.addWidget(self.list)
 
 
         self.refresh_btn = QtWidgets.QPushButton("Refresh")
         lay.addWidget(self.refresh_btn)
 
+    @property
+    def time_combo_box_changed(self):
+        self._task_time = self.time_combo_box.currentText()
+        return self._task_time
+
+
+    def populate_list(self):
+        time = self.time_combo_box_changed
+
+        self.list.clear()
+        self.list.addItems(list(self.tasks[time]))
+
+        return
+
+
+    def remove_list_item(self, index):
+        return
+
+    # endregion
+
     def create_edit_group_box(self):
-        lay = QtWidgets.QHBoxLayout()
         # lay.setAlignment(QtCore.Qt.Orientation)
         self._edit_group_box = QtWidgets.QGroupBox("Edit")
+        lay = QtWidgets.QGridLayout()
         self._edit_group_box.setLayout(lay)
 
-        self.plus_btn = QtWidgets.QPushButton("+")
-        lay.addWidget(self.plus_btn)
+        self._selected_task_label = QtWidgets.QLabel()
+        self.set_edit_task
+        lay.addWidget(self._selected_task_label, 0, 0, 1, 2)
 
+        self.plus_btn = QtWidgets.QPushButton("+")
+        lay.addWidget(self.plus_btn, 1, 0)
 
         self.minus_btn = QtWidgets.QPushButton("-")
-        lay.addWidget(self.minus_btn)
+        lay.addWidget(self.minus_btn, 1, 1)
+    # region -- List
 
+    @property
+    def set_edit_task(self):
+        if self.list.selectedItems():
+            self._edit_task = self.list.selectedItems()[0].text()
+            self._selected_task_label.setText(self._edit_task)
+        else:
+            self._selected_task_label.setText(".")
+            return
 
     def center(self):
         """
@@ -135,17 +184,24 @@ def run(*args):
         else:
 
             import sys
-            from ppGui.stylesheet.darkss import DarkPalette  # change la palette de couleur
             app = QtWidgets.QApplication(*args)
-            dp = DarkPalette()
+            try:
+                from ppGui.stylesheet.darkss import DarkPalette  # change la palette de couleur
 
-            app.setStyle("Fusion")
-            app.setPalette(dp)
+                dp = DarkPalette()
+
+                app.setStyle("Fusion")
+                app.setPalette(dp)
+            except ModuleNotFoundError:
+                pass
 
             ui = MyUi()
             ui.show()
 
-            sys.exit(app.exec_())
+            # sys.exit(app.exec_())
+            sys.exit(app.exec())
+
+
     except:
         print(traceback.format_exc())
 
